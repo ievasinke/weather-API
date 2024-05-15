@@ -9,36 +9,40 @@
  */
 
 // TODO export API_KEY=yourownkey
-function getData(string $url): stdClass {
+function getData(string $url): string
+{
     $options = [
         CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_HEADER         => false
+        CURLOPT_HEADER => false
     ];
 
     $ch = curl_init($url);
     curl_setopt_array($ch, $options);
-    $content  = curl_exec($ch);
+    $content = curl_exec($ch);
     curl_close($ch);
-    $contentDecoded = json_decode($content);
 
-    if (is_array($contentDecoded) && count($contentDecoded) === 1) {
-        return $contentDecoded[0];
-    }
-    return $contentDecoded;
-};
+    return $content;
+}
+
+;
+
+$cityName = urlencode((string)readline(("Enter city name: \n")));
 
 $appid = getenv("API_KEY");
-$cityName = (string)readline(("Enter city name: \n"));
 $geoUrl = "http://api.openweathermap.org/geo/1.0/direct?q=$cityName&appid=$appid";
-$jsonDataGeo = getData($geoUrl);
-$lat = $jsonDataGeo->lat;
-$lon = $jsonDataGeo->lon;
 
+$jsonGeo = getData($geoUrl);
+$jsonDataGeo = json_decode($jsonGeo);
+
+$lat = $jsonDataGeo[0]->lat;
+$lon = $jsonDataGeo[0]->lon;
 $weatherUrl = "https://api.openweathermap.org/data/2.5/weather?lat=$lat&lon=$lon&appid=$appid&units=metric";
-$jsonDataWeather = getData($weatherUrl);
+
+$jsonWeather = getData($weatherUrl);
+$jsonDataWeather = json_decode($jsonWeather);
 
 $dayTime = date("l", $jsonDataWeather->dt);
-$cityName = $jsonDataGeo->name;
+$cityName = $jsonDataGeo[0]->name;
 $temperature = round($jsonDataWeather->main->temp);
 $weatherMain = $jsonDataWeather->weather[0]->main;
 $wind = round($jsonDataWeather->wind->speed);
