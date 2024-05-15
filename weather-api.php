@@ -9,45 +9,42 @@
  */
 
 // TODO export API_KEY=yourownkey
-// TODO before running php weather-api.php
+function getData(string $url): stdClass {
+    $options = [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_HEADER         => false
+    ];
+
+    $ch = curl_init($url);
+    curl_setopt_array($ch, $options);
+    $content  = curl_exec($ch);
+    curl_close($ch);
+    $contentDecoded = json_decode($content);
+
+    if (is_array($contentDecoded) && count($contentDecoded) === 1) {
+        return $contentDecoded[0];
+    }
+    return $contentDecoded;
+};
 
 $appid = getenv("API_KEY");
 $cityName = (string)readline(("Enter city name: \n"));
-$stateCode = "";
-$countryCode = "";
+$geoUrl = "http://api.openweathermap.org/geo/1.0/direct?q=$cityName&appid=$appid";
+$jsonDataGeo = getData($geoUrl);
+$lat = $jsonDataGeo->lat;
+$lon = $jsonDataGeo->lon;
 
-$geoUrl = "http://api.openweathermap.org/geo/1.0/direct?q=$cityName,$stateCode,$countryCode&appid=$appid";
-
-$jsonGeo = file_get_contents($geoUrl);
-$jsonDataGeo = json_decode($jsonGeo);
-
-$lat = $jsonDataGeo[0]->lat;
-$lon = $jsonDataGeo[0]->lon;
-$url = "https://api.openweathermap.org/data/2.5/weather?lat={$lat}&lon={$lon}&appid={$appid}&units=metric";
-
-$ch = curl_init($url);
-$fp = fopen("weather.json", "w");
-curl_setopt($ch, CURLOPT_FILE, $fp);
-curl_setopt($ch, CURLOPT_HEADER, 0);
-
-curl_exec($ch);
-if (curl_error($ch)) {
-    fwrite($fp, curl_error($ch));
-}
-curl_close($ch);
-fclose($fp);
-
-$jsonWeather = file_get_contents('weather.json');
-$jsonDataWeather = json_decode($jsonWeather);
+$weatherUrl = "https://api.openweathermap.org/data/2.5/weather?lat=$lat&lon=$lon&appid=$appid&units=metric";
+$jsonDataWeather = getData($weatherUrl);
 
 $dayTime = date("l", $jsonDataWeather->dt);
-$cityName = $jsonDataGeo[0]->name;
+$cityName = $jsonDataGeo->name;
 $temperature = round($jsonDataWeather->main->temp);
 $weatherMain = $jsonDataWeather->weather[0]->main;
 $wind = round($jsonDataWeather->wind->speed);
 $humidity = $jsonDataWeather->main->humidity;
 
-echo "\e[37m$dayTime, weather in \e[93m$cityName.\n";
+echo "\e[37m$dayTime, weather in \e[93m$cityName\n";
 echo "\t\e[97m$weatherMain\n";
 echo "\e[37mTemperature:\t\e[97m$temperature °C,\n";
 echo "\e[37mWind:\t\t\e[97m$wind m/s,\n";
