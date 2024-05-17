@@ -24,11 +24,17 @@ function getData(string $url): string
     return $content;
 }
 
-;
-
-$cityName = urlencode((string)readline(("Enter city name: \n")));
+$cityName = trim((string)readline(("Enter city name: \n")));
+if (empty($cityName)) {
+    exit("City name cannot be empty. Please enter a valid city name.\n");
+}
+$cityName = urlencode($cityName);
 
 $appid = getenv("API_KEY");
+if (empty($appid)) {
+    exit("API key is not set. Please set your API key and try again.\n");
+}
+
 $geoUrl = "http://api.openweathermap.org/geo/1.0/direct?q=$cityName&appid=$appid";
 
 $jsonGeo = getData($geoUrl);
@@ -40,6 +46,16 @@ $weatherUrl = "https://api.openweathermap.org/data/2.5/weather?lat=$lat&lon=$lon
 
 $jsonWeather = getData($weatherUrl);
 $jsonDataWeather = json_decode($jsonWeather);
+
+if (empty($jsonGeo) || empty($jsonWeather)) {
+    exit("Failed to fetch weather data. Please try again later.\n");
+}
+if ($jsonDataGeo === null || !isset($jsonDataGeo[0]->lat) || !isset($jsonDataGeo[0]->lon)) {
+    exit("Failed to parse geo data. Please try again later.\n");
+}
+if ($jsonDataWeather === null || !isset($jsonDataWeather->main) || !isset($jsonDataWeather->weather[0]->main) || !isset($jsonDataWeather->wind) || !isset($jsonDataWeather->main->humidity)) {
+    exit("Failed to parse weather data. Please try again later.\n");
+}
 
 $dayTime = date("l", $jsonDataWeather->dt);
 $cityName = $jsonDataGeo[0]->name;
